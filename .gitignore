@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environment (uv.lock is committed instead — that is the reproducible bit)
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Rendered output and training artifacts
+*.mp4
+*.gif
+outputs/
+checkpoints/
+runs/
+wandb/
+*.ckpt
+*.pt
+*.pth
+
+
+notebooks/Mujoco_tutorial
+MUJOCO_LOG.TXT
+models/ms_human_700/*
