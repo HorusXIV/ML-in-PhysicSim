@@ -1,126 +1,134 @@
-<mujoco model="basic_6_legged_walker">
+<mujoco model="hexapod_3dof">
     <compiler angle="degree" coordinate="local"/>
-    
     <option integrator="implicitfast" timestep="0.002" iterations="1"/>
 
     <default>
-        <!-- Rigid body visual defaults -->
-        <geom rgba="0.1 0.5 0.8 1" type="capsule" density="1000"/>
-        <!-- Joint defaults for simple angular control -->
-        <joint type="hinge" limited="true" range="-45 45" armature="0.01" damping="0.5"/>
+        <geom rgba="0.1 0.5 0.8 1" type="capsule" density="1000" size="0.015"/>
+        <joint type="hinge" limited="true" armature="0.01" damping="0.5"/>
+        <position kp="25" kv="1.5"/>
     </default>
 
+    <asset>
+        <mesh name="hexagon_mesh" vertex="0.2425 0.14 0.04 0.0 0.28 0.04 -0.2425 0.14 0.04 -0.2425 -0.14 0.04 0.0 -0.28 0.04 0.2425 -0.14 0.04 0.2425 0.14 -0.04 0.0 0.28 -0.04 -0.2425 0.14 -0.04 -0.2425 -0.14 -0.04 0.0 -0.28 -0.04 0.2425 -0.14 -0.04"/>
+    </asset>
+
     <worldbody>
-
-        <!-- Central Torso -->
-        <body name="torso" pos="0 0 0.4">
+        <body name="torso" pos="0 0 0.35">
             <freejoint name="root"/>
-            <geom name="torso_geom" type="box" size="0.3 0.15 0.05" density="200" rgba="0.2 0.2 0.2 1"/>
+            <geom name="torso_geom" type="mesh" mesh="hexagon_mesh" density="250" rgba="0.25 0.25 0.28 1"/>
 
-            <!-- ================= LEG 1 (Front Left) ================= -->
-            <body name="hip_fl" pos="0.2 0.15 0">
-                <joint name="hip_joint_fl" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_fl" fromto="0 0 0 0 0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_fl" pos="0 0.1 -0.1">
-                    <joint name="knee_joint_fl" axis="1 0 0" range="-60 0"/>
-                    <geom name="lower_fl" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_fl" pos="0 0 -0.1"/>
+            <!-- Leg generation pattern. FL: 30, ML: 90, BL: 150, FR: -30, MR: -90, BR: -150 -->
+            <!-- Front Left (+30 deg) -->
+            <body name="coxa_fl" pos="0.2425 0.14 0" euler="0 0 30">
+                <joint name="joint_coxa_fl" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_fl" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_fl" pos="0.05 0 0">
+                    <joint name="joint_femur_fl" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_fl" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_fl" pos="0.12 0 0">
+                        <joint name="joint_tibia_fl" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_fl" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_fl" pos="0.2 0.1 0.05"/>
 
-            <!-- ================= LEG 2 (Mid Left) ================= -->
-            <body name="hip_ml" pos="0 0.15 0">
-                <joint name="hip_joint_ml" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_ml" fromto="0 0 0 0 0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_ml" pos="0 0.1 -0.1">
-                    <joint name="knee_joint_ml" axis="1 0 0" range="-60 0"/>
-                    <geom name="lower_ml" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_ml" pos="0 0 -0.1"/>
+            <!-- Mid Left (+90 deg) -->
+            <body name="coxa_ml" pos="0 0.28 0" euler="0 0 90">
+                <joint name="joint_coxa_ml" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_ml" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_ml" pos="0.05 0 0">
+                    <joint name="joint_femur_ml" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_ml" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_ml" pos="0.12 0 0">
+                        <joint name="joint_tibia_ml" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_ml" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_ml" pos="0 0.1 0.05"/>
 
-            <!-- ================= LEG 3 (Back Left) ================= -->
-            <body name="hip_bl" pos="-0.2 0.15 0">
-                <joint name="hip_joint_bl" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_bl" fromto="0 0 0 0 0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_bl" pos="0 0.1 -0.1">
-                    <joint name="knee_joint_bl" axis="1 0 0" range="-60 0"/>
-                    <geom name="lower_bl" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_bl" pos="0 0 -0.1"/>
+            <!-- Back Left (+150 deg) -->
+            <body name="coxa_bl" pos="-0.2425 0.14 0" euler="0 0 150">
+                <joint name="joint_coxa_bl" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_bl" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_bl" pos="0.05 0 0">
+                    <joint name="joint_femur_bl" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_bl" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_bl" pos="0.12 0 0">
+                        <joint name="joint_tibia_bl" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_bl" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_bl" pos="-0.2 0.1 0.05"/>
 
-            <!-- ================= LEG 4 (Front Right) ================= -->
-            <body name="hip_fr" pos="0.2 -0.15 0">
-                <joint name="hip_joint_fr" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_fr" fromto="0 0 0 0 -0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_fr" pos="0 -0.1 -0.1">
-                    <joint name="knee_joint_fr" axis="1 0 0" range="0 60"/>
-                    <geom name="lower_fr" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_fr" pos="0 0 -0.1"/>
+            <!-- Front Right (-30 deg) -->
+            <body name="coxa_fr" pos="0.2425 -0.14 0" euler="0 0 -30">
+                <joint name="joint_coxa_fr" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_fr" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_fr" pos="0.05 0 0">
+                    <joint name="joint_femur_fr" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_fr" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_fr" pos="0.12 0 0">
+                        <joint name="joint_tibia_fr" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_fr" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_fr" pos="0.2 -0.1 0.05"/>
 
-            <!-- ================= LEG 5 (Mid Right) ================= -->
-            <body name="hip_mr" pos="0 -0.15 0">
-                <joint name="hip_joint_mr" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_mr" fromto="0 0 0 0 -0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_mr" pos="0 -0.1 -0.1">
-                    <joint name="knee_joint_mr" axis="1 0 0" range="0 60"/>
-                    <geom name="lower_mr" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_mr" pos="0 0 -0.1"/>
+            <!-- Mid Right (-90 deg) -->
+            <body name="coxa_mr" pos="0 -0.28 0" euler="0 0 -90">
+                <joint name="joint_coxa_mr" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_mr" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_mr" pos="0.05 0 0">
+                    <joint name="joint_femur_mr" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_mr" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_mr" pos="0.12 0 0">
+                        <joint name="joint_tibia_mr" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_mr" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_mr" pos="0 -0.1 0.05"/>
 
-            <!-- ================= LEG 6 (Back Right) ================= -->
-            <body name="hip_br" pos="-0.2 -0.15 0">
-                <joint name="hip_joint_br" axis="0 0 1" range="-30 30"/>
-                <geom name="upper_br" fromto="0 0 0 0 -0.1 -0.1" size="0.02"/>
-                
-                <body name="knee_br" pos="0 -0.1 -0.1">
-                    <joint name="knee_joint_br" axis="1 0 0" range="0 60"/>
-                    <geom name="lower_br" fromto="0 0 0 0 0 -0.2" size="0.015"/>
-                    <site name="lower_site_br" pos="0 0 -0.1"/>
+            <!-- Back Right (-150 deg) -->
+            <body name="coxa_br" pos="-0.2425 -0.14 0" euler="0 0 -150">
+                <joint name="joint_coxa_br" axis="0 0 1" range="-35 35"/>
+                <geom name="geom_coxa_br" fromto="0 0 0 0.05 0 0"/>
+                <body name="femur_br" pos="0.05 0 0">
+                    <joint name="joint_femur_br" axis="0 1 0" range="-60 40"/>
+                    <geom name="geom_femur_br" fromto="0 0 0 0.12 0 0" rgba="0.8 0.3 0.1 1"/>
+                    <body name="tibia_br" pos="0.12 0 0">
+                        <joint name="joint_tibia_br" axis="0 1 0" range="-40 60"/>
+                        <geom name="geom_tibia_br" fromto="0 0 0 0 0 -0.22" rgba="0.2 0.8 0.3 1"/>
+                    </body>
                 </body>
             </body>
-            <site name="torso_site_br" pos="-0.2 -0.1 0.05"/>
-            <camera name="tracking_cam" pos="0 -1.2 0.5" euler="63 0 0" mode="track"/>
+
+            <camera name="tracking_cam" pos="0 -1.6 0.8" euler="60 0 0" mode="track"/>
         </body>
     </worldbody>
 
-    <tendon>
-        <spatial name="tendon_fl" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_fl"/><site site="lower_site_fl"/></spatial>
-        <spatial name="tendon_ml" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_ml"/><site site="lower_site_ml"/></spatial>
-        <spatial name="tendon_bl" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_bl"/><site site="lower_site_bl"/></spatial>
-        <spatial name="tendon_fr" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_fr"/><site site="lower_site_fr"/></spatial>
-        <spatial name="tendon_mr" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_mr"/><site site="lower_site_mr"/></spatial>
-        <spatial name="tendon_br" rgba="0.9 0.1 0.1 1" width="0.01"><site site="torso_site_br"/><site site="lower_site_br"/></spatial>
-    </tendon>
-
-    <!-- One position servo per joint. No ctrlrange: angle="degree" does NOT
-         convert it, so the adapter maps policy output onto jnt_range instead. -->
     <actuator>
-        <position name="act_hip_fl" joint="hip_joint_fl" kp="20" kv="1"/>
-        <position name="act_knee_fl" joint="knee_joint_fl" kp="20" kv="1"/>
-        <position name="act_hip_ml" joint="hip_joint_ml" kp="20" kv="1"/>
-        <position name="act_knee_ml" joint="knee_joint_ml" kp="20" kv="1"/>
-        <position name="act_hip_bl" joint="hip_joint_bl" kp="20" kv="1"/>
-        <position name="act_knee_bl" joint="knee_joint_bl" kp="20" kv="1"/>
-        <position name="act_hip_fr" joint="hip_joint_fr" kp="20" kv="1"/>
-        <position name="act_knee_fr" joint="knee_joint_fr" kp="20" kv="1"/>
-        <position name="act_hip_mr" joint="hip_joint_mr" kp="20" kv="1"/>
-        <position name="act_knee_mr" joint="knee_joint_mr" kp="20" kv="1"/>
-        <position name="act_hip_br" joint="hip_joint_br" kp="20" kv="1"/>
-        <position name="act_knee_br" joint="knee_joint_br" kp="20" kv="1"/>
+        <position name="act_coxa_fl" joint="joint_coxa_fl"/>
+        <position name="act_femur_fl" joint="joint_femur_fl"/>
+        <position name="act_tibia_fl" joint="joint_tibia_fl"/>
+        
+        <position name="act_coxa_ml" joint="joint_coxa_ml"/>
+        <position name="act_femur_ml" joint="joint_femur_ml"/>
+        <position name="act_tibia_ml" joint="joint_tibia_ml"/>
+        
+        <position name="act_coxa_bl" joint="joint_coxa_bl"/>
+        <position name="act_femur_bl" joint="joint_femur_bl"/>
+        <position name="act_tibia_bl" joint="joint_tibia_bl"/>
+        
+        <position name="act_coxa_fr" joint="joint_coxa_fr"/>
+        <position name="act_femur_fr" joint="joint_femur_fr"/>
+        <position name="act_tibia_fr" joint="joint_tibia_fr"/>
+        
+        <position name="act_coxa_mr" joint="joint_coxa_mr"/>
+        <position name="act_femur_mr" joint="joint_femur_mr"/>
+        <position name="act_tibia_mr" joint="joint_tibia_mr"/>
+        
+        <position name="act_coxa_br" joint="joint_coxa_br"/>
+        <position name="act_femur_br" joint="joint_femur_br"/>
+        <position name="act_tibia_br" joint="joint_tibia_br"/>
     </actuator>
 </mujoco>

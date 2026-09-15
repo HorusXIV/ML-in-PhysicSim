@@ -18,7 +18,7 @@ jobs:
       # No GPU on the runner, so skip the CUDA wheels. JAX falls back to CPU.
       - run: uv sync --no-group cuda --no-group notebook
 
-      - run: uv run ruff check src
-      - run: uv run ruff format --check src
+      - run: uv run ruff check src tests
+      - run: uv run ruff format --check src tests
 
       - run: uv run pytest -q
