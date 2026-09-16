@@ -8,7 +8,8 @@ qvel = [linvel(3), angvel(3), joints...].
 
 import jax.numpy as jnp
 
-from brain import gait, mlp
+from brain import mlp
+from brain.movement import gait
 from brain.rotation import quat_to_sixd
 
 

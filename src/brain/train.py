@@ -48,7 +48,8 @@ import optax
 from mujoco import mjx
 from tqdm import tqdm
 
-from brain import adapter, gait, mlp
+from brain import adapter, mlp
+from brain.movement import gait
 from brain.rotation import quat_to_matrix
 
 CONTROL_REPEAT = 10

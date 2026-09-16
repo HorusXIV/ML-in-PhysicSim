@@ -22,7 +22,8 @@
   <!-- 2. Keep the worldbody clean, containing only environmental objects -->
   <worldbody>
     <!--fixed camera for visualization -->
-    <camera name="fixed_cam" pos="0 -1.5 1.0" euler="50 0 0"/>
+    <camera name="fixed_cam" pos="0 -1.5 1.0" euler="60 0 0"/>
+    <camera name="top_cam" pos="0 0 2.0" euler="0 0 0"/>
     <light pos="0 0 1.5" dir="0 0 -1"/>
     <geom name="floor" pos="0 0 -0.1" size="0 0 0.05" type="plane" material="groundplane" friction="1.5 0.005 0.0001"/>
   </worldbody>
