@@ -1,84 +1,112 @@
-# physics-sim
+# Hexapod locomotion with MuJoCo MJX
 
-Differentiable hexapod locomotion with MuJoCo MJX.
+An experimental hexapod controller built with JAX and MuJoCo MJX. A small MLP
+maps observations to joint controls. The project explores supervised cloning
+of a reference tripod gait and analytic policy gradients through the simulator.
+
+The gait-cloning experiment walks; training directly through contact dynamics
+has not produced a useful locomotion policy in the documented experiments.
+This repository includes the implementation, experiments, and checks rather
+than a pretrained controller or a claim of general-purpose locomotion.
 
 ## Setup
 
+Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). From the repository root:
+
 ```bash
-uv sync          # includes CUDA wheels + Jupyter by default
+uv sync
 ```
 
-CPU only (what CI runs):
+The default dependency groups include development tools, Jupyter, and CUDA 12
+JAX wheels. For CPU-only development:
 
 ```bash
 uv sync --no-group cuda --no-group notebook
 ```
 
+To use the notebook on CPU, keep its dependency group:
+
+```bash
+uv sync --no-group cuda
+cd notebooks
+uv run --no-group cuda jupyter notebook hexapod.ipynb
+```
+
+The notebook's model paths are relative to `notebooks/`. Run it with that
+working directory. To use CUDA, omit `--no-group cuda` on a compatible system.
+Rendering also needs a suitable MuJoCo/OpenGL backend for your machine.
+
 ## Layout
 
-```
-models/SELF_Hexapod/    hexapod.xml (body) + scene.xml (floor, lights, cameras)
+```text
+models/SELF_Hexapod/    hexapod.xml and scene.xml
 src/brain/
-  mlp.py                the policy network (plain JAX, params are a pytree)
-  rotation.py           6D <-> quaternion, for continuous orientation inputs
-  adapter.py            observation extraction and action -> ctrl mapping
-  gait.py               the reference tripod gait
-  train.py              analytic policy gradients through MJX
-tests/                  unit tests
-notebooks/hexapod.ipynb rollouts, gradients, training, visualisation
+  mlp.py                policy network (JAX parameter pytrees)
+  rotation.py           quaternion / continuous 6D rotation conversions
+  adapter.py            observations and action-to-control mapping
+  movement/gait.py      reference tripod gait
+  movement/jump.py      experimental jump motion
+  train.py              gait cloning and analytic policy gradients
+notebooks/hexapod.ipynb experiments, rollouts, and visualizations
+tests/test_brain.py    rotation, simulation, gait, and gradient checks
 ```
 
-`src/brain` installs as the `brain` package, so `import brain` works anywhere in
-the venv — no `sys.path` juggling in notebooks.
+The project installs `src/brain` as the `brain` package.
+
+## Training example
+
+From the repository root, after setup:
+
+```python
+import jax
+import mujoco
+from brain import adapter, mlp
+from brain.train import clone_gait
+
+model = mujoco.MjModel.from_xml_path("models/SELF_Hexapod/scene.xml")
+params = mlp.init(jax.random.key(0), [adapter.obs_dim(model), 64, 64, model.nu])
+params, history = clone_gait(model, params, jax.random.key(1))
+```
+
+See the notebook for evaluation and visualization. The existing experiment
+reports around 17 seconds for cloning and 1.41 m of travel in 5 seconds;
+these are recorded measurements, not a cross-hardware benchmark.
+
+## Experimental findings and limitations
+
+`train()` differentiates through `mjx.step` using truncated backpropagation
+through time. It uses no value function or replay buffer. The experiments
+compare simulator gradients with finite differences and find large
+disagreement around contact changes. The forward-velocity objective diverges;
+reference-gait tracking has not beaten the zero-policy baseline in the
+reported runs. See `brain.train` and the notebook for the measurements.
+
+The optimizer is `optax.contrib.muon`, using Muon for 2D weights and Adam for
+1D biases. Training accepts separate learning rates for these parameter groups.
 
 ## Checks
 
+CPU-only commands, run from the repository root:
+
 ```bash
-uv run pytest
-uv run ruff check src tests && uv run ruff format --check src tests
+uv run --no-group cuda --no-group notebook pytest -q
+uv run --no-group cuda --no-group notebook ruff check src tests
+uv run --no-group cuda --no-group notebook ruff format --check src tests
 ```
 
-## Training
+Known issue at preparation time: `tests/test_brain.py` still imports `gait`
+from `brain`; its current location is `brain.movement.gait`. That import must
+be updated before the tests can collect. The CI sync step selects CPU-only
+dependencies, but its later `uv run` commands also need the same group flags
+to avoid requesting default CUDA/notebook groups again.
 
-```python
-from brain.train import clone_gait
-params, history = clone_gait(mj_model, params, jax.random.key(0))
-```
+## Implementation notes
 
-`clone_gait` fits the policy to the reference gait supervised: ~17 s, and the
-result walks 1.41 m in 5 s.
-
-`train()` is the analytic-policy-gradient version — loss differentiated
-straight through `mjx.step`, truncated BPTT, no RL. It is built and it runs,
-but on this model its gradient is not a usable signal. Against finite
-differences it is wrong by 62x at a one-step horizon and 269% at sixteen, in
-both float32 and float64, because contact make/break makes the loss surface
-non-smooth. `walk_loss` diverges; `track_gait_loss` plateaus above the
-zero-policy baseline. The numbers are in the `brain.train` docstring.
-
-Optimizer is `optax.contrib.muon`. Muon orthogonalizes the update for 2D
-weights via Newton-Schulz and falls back to Adam for 1D biases, which is why
-`train` takes two learning rates.
-
-## Notes
-
-- On a small GPU set `XLA_PYTHON_CLIENT_PREALLOCATE=false` before importing
-  jax. JAX otherwise grabs ~75% of VRAM on first use, leaving cuSolver unable
-  to create its handle (`gpusolverDnCreate failed`) and the EGL renderer short
-  of memory. The notebook's first cell does this.
-
-- `hexapod.xml` sets `iterations="1"`. MJX only differentiates its constraint
-  solver in that case; above 1 it uses a `lax.while_loop`, which has no
-  reverse-mode rule, and `jax.grad` through `mjx.step` fails. On this scene the
-  accurate solver is indistinguishable anyway.
-- The default objective tracks a hand-written tripod gait
-  (`brain.gait.tripod`) instead of rewarding forward velocity. This is not a
-  shortcut: contact gradients through a planted foot are near zero, so the
-  from-scratch objective (`walk_loss`) diverges. DeepMind's own APG example
-  tracks a reference gait for the same reason.
-- The gait's sign conventions were measured, not derived -- a sweep over both
-  sign choices scored on distance travelled open-loop. The wrong knee sign jams
-  the left knees against their `-60..0` limit and the robot shuffles in place.
-- Actuators carry no `ctrlrange`: `angle="degree"` converts `jnt_range` but
-  *not* `ctrlrange`, so limits are declared once on the joints and
-  `brain.joint_limits` reads them back in radians.
+- On a small GPU, set `XLA_PYTHON_CLIENT_PREALLOCATE=false` before importing
+  JAX, as the notebook does, to leave memory for MuJoCo rendering.
+- The model sets solver `iterations="1"` for the differentiated experiment.
+  In the tested setup, higher values use a loop without reverse-mode support.
+- The reference motion is `brain.movement.gait.tripod`. Joint sign conventions
+  were checked by measuring open-loop travel.
+- Joint limits are declared in the model and read by `brain.joint_limits`.
+  Actuator `ctrlrange` is intentionally not used as a second set of limits.
