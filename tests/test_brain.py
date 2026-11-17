@@ -8,7 +8,8 @@ import mujoco
 import numpy as np
 from mujoco import mjx
 
-from brain import adapter, gait, mlp, train
+from brain import adapter, mlp, train
+from brain.movement import gait
 from brain.rotation import (
     matrix_to_quat,
     quat_to_matrix,
