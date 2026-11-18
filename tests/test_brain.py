@@ -77,14 +77,17 @@ def test_tripod_gait_walks():
     shuffles in place instead of walking."""
     mj_model = mujoco.MjModel.from_xml_path(MODEL)
     mj_data = train.standing_state(mj_model)
-    x0 = mj_data.qpos[0]
+    x0, z0 = mj_data.qpos[0], mj_data.qpos[2]
 
     for _ in range(1000):  # 2 s
         mj_data.ctrl[:] = np.asarray(gait.tripod(mj_data.time))
         mujoco.mj_step(mj_model, mj_data)
 
     assert mj_data.qpos[0] - x0 > 0.3, "reference gait does not walk forward"
-    assert mj_data.qpos[2] > 0.15, "reference gait collapses the torso"
+    # Relative to the settled height rather than an absolute z, since that depends
+    # on leg geometry and on the floor sitting at z = -0.1. A collapsed torso rests
+    # on the floor, roughly 0.19 below standing.
+    assert mj_data.qpos[2] > z0 - 0.05, "reference gait collapses the torso"
     # Torso z-axis still points up.
     assert mj_data.xmat[1].reshape(3, 3)[2, 2] > 0.9, "reference gait tips over"
 

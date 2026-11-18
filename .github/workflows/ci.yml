@@ -8,6 +8,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Otherwise every `uv run` re-syncs the default groups and pulls the CUDA
+      # and notebook wheels straight back in after the sync below excluded them.
+      UV_NO_SYNC: "1"
     steps:
       - uses: actions/checkout@v4
 
